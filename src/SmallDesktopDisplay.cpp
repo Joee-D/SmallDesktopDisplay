@@ -186,6 +186,16 @@ String monthDay()
   return s;
 }
 
+//定时关闭屏幕
+int nightLight = 0;
+int nightHour = 23;
+int nightMin = 00;
+int nightSec = 0;
+int dayLight = 10;
+int dayHour = 7;
+int dayMin = 00;
+int daySec = 0;
+
 /* *****************************************************************
  *  函数
  * *****************************************************************/
@@ -811,6 +821,7 @@ void getCityWeater()
     indexEnd = str.indexOf(",{\"fa");
     String jsonFC = str.substring(indexStart + 5, indexEnd);
     // Serial.println(jsonFC);
+    str.~String();
 
     weaterData(&jsonCityDZ, &jsonDataSK, &jsonFC);
     Serial.println("获取成功");
@@ -1205,10 +1216,6 @@ void WIFI_reflash_All()
       getCityWeater();
       // Serial.println("getCityWeater end");
 
-      getNtpTime();
-      //其他需要联网的方法写在后面
-
-      WiFi.forceSleepBegin(); // Wifi Off
       Serial.println("WIFI sleep......");
       Wifi_en = 0;
     }
@@ -1223,7 +1230,6 @@ void WIFI_reflash_All()
 void openWifi()
 {
   Serial.println("WIFI reset......");
-  WiFi.forceSleepWake(); // wifi on
   Wifi_en = 1;
 }
 
@@ -1356,7 +1362,6 @@ void setup()
     IndoorTem();
 #endif
 
-  WiFi.forceSleepBegin(); // wifi off
   Serial.println("WIFI休眠......");
   Wifi_en = 0;
 
@@ -1370,7 +1375,7 @@ void setup()
   reflash_openWifi.onRun(openWifi);
 
   reflash_Animate.setInterval(TMS / 10); //设置帧率
-  reflash_openWifi.onRun(refresh_AnimatedImage);
+  reflash_Animate.onRun(refresh_AnimatedImage);
   controller.run();
 }
 
@@ -1391,6 +1396,18 @@ void refresh_AnimatedImage()
 #endif
 }
 
+void autoLight()
+{
+  if ((hour() == nightHour) && (minute() == nightMin) && (second() == nightSec)) {
+    Serial.printf("亮度调整为：");
+    analogWrite(LCD_BL_PIN, 1023 - (nightLight * 10));
+    Serial.println(nightLight);
+  } else if ((hour() == dayHour) && (minute() == dayMin) && (second() == daySec)) {
+    Serial.printf("亮度调整为：");
+    analogWrite(LCD_BL_PIN, 1023 - (dayLight * 10));
+    Serial.println(dayLight);
+  }
+}
 void loop()
 {
   // refresh_AnimatedImage(&TJpgDec); //更新右下角
@@ -1399,4 +1416,5 @@ void loop()
   WIFI_reflash_All();      // WIFI应用
   Serial_set();            //串口响应
   Button_sw1.loop();       //按钮轮询
+  autoLight();             //定时调整亮度
 }
